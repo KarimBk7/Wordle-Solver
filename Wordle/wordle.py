@@ -1,8 +1,5 @@
-import time
-import sys
 import consts as cn
 
-start_time = time.process_time()
 
 def filter_dupes():
    
@@ -14,7 +11,7 @@ def filter_dupes():
     for c, i in green_zip:
         if not i:
             cn.letters.remove(c)
-    cn.letters = "".join(cn.letters)
+    cn.letters = "".join(set(cn.letters))
         
 
         
@@ -78,7 +75,6 @@ def calculate():
                         # check if word exists
                         if buff in cn.data and check_word(buff):
                             cn.words.append(buff)
-    return cn.words
 
 
 def check_word(word):
@@ -97,32 +93,42 @@ def check_word(word):
     return True
 
 
-
+def cn_Print():
+    print("Green:", cn.green)
+    print("Yellow-List:", cn.yellow_list)
+    print("Yellow-Dict:", cn.yellow_dic)
+    print("Letters:", cn.letters)
 
 def extract(gui_data): 
     
     cn.green = gui_data["green"]
     cn.green_mul = gui_data["green_more_than_once"]
-    
     cn.yellow_list = gui_data["yellow"]
+    cn.letters = list(set(gui_data["available_letters"]))
+    yellow_zip = zip(cn.yellow_list, gui_data["yellow_more_than_once"])
     
-    cn.letters = gui_data["available_letters"]
+    for i, j in yellow_zip:
+        n = len(i)
+        m = len(j)
+        if n != m:
+            continue
+        for k in range(n):
+            cn.yellow_dic[i[k]] = int(j[k])
+            
     
     filter_dupes()
+    cn_Print()
     create_lists()
+    calculate()
+    
+    def sort(x):
+        return len(set(x))
+    sorted(cn.words, key=sort, reverse=True)
+    
+    return cn.words
 
-    return calculate()
-    
-    
+
 '''
-# Sort distinct letters
-def sort(x):
-    return len(set(x))
-
-sorted(words, key=sort, reverse=True)
-
-
-
 print(f"\n\n\nAll possible Words:\n\n{words}")
 
 

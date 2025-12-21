@@ -69,7 +69,7 @@ def extract():
     green = [text_vars[(0, c)].get() for c in range(COLS)]
     green_more_than_once = [radio_vars[1][c].get() for c in range(COLS)]
     yellow = [text_vars[(2, c)].get() for c in range(COLS)]
-    yellow_more_than_once = [radio_vars[3][c].get() for c in range(COLS)]
+    yellow_more_than_once = [text_vars[(3, c)].get() for c in range(COLS)]
     available_letters = available_letters_var.get()
 
     result = {
@@ -80,7 +80,7 @@ def extract():
         "available_letters": available_letters,
     }
 
-    print(result)
+    print("\n\n", result,"\n\n")
     words = wd.extract(result)
     messagebox.showinfo("Extrahiert", str(words))
 
@@ -99,7 +99,7 @@ make_text_row(2)
 
 # Zeile 4: More than once? (Radio)
 add_row_title(3)
-make_radio_row(3)
+make_text_row(3)
 
 add_row_title(4)
 make_available_letters_row(4)
