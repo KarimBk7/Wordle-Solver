@@ -1,3 +1,6 @@
+f = open("words_5.txt")
+data = f.read()
+
 alpha ="abcdefghijklmnopqrstuvwxyz"
 green =  ["","","","",""]
 green_mul = [1,1,1,1,1]
@@ -12,3 +15,7 @@ j_list = []
 k_list = []
 l_list = []
 m_list = []
+
+y_list = []
+
+words = []
