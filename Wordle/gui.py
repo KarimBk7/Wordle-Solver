@@ -11,6 +11,7 @@ COL_TITLES = ["1. Buchstabe", "2. Buchstabe", "3. Buchstabe", "4. Buchstabe", "5
 root = tk.Tk()
 root.title("Wordle-Cheater")
 
+multi_text_vars = {}    # (content_row, col, i) -> StringVar   i=0..4
 text_vars = {}   # (content_row, col) -> StringVar  (content_row: 0..3)
 available_letters_var = tk.StringVar()  # für Zeile 5 (ein Feld)
 radio_vars = {}  # content_row -> list[StringVar]   (nur für Radio-Zeilen)
@@ -47,6 +48,23 @@ def make_text_row(content_row: int):
         e.grid(row=ui_row, column=c + 1, padx=4, pady=4, sticky="nsew")
         text_vars[(content_row, c)] = v
 
+def make_multi_text_row(content_row: int, per_col: int = 5):
+    """
+    Pro Spalte ein Frame, darin 'per_col' Entry-Felder NEBENEINANDER.
+    Ergebnis: 5 Textfelder pro Spalte (also 25 Felder in der Zeile).
+    """
+    ui_row = content_row + 1
+    for c in range(COLS):
+        cell = tk.Frame(root, bd=1, relief="solid")
+        cell.grid(row=ui_row, column=c + 1, padx=4, pady=4, sticky="nsew")
+
+        for i in range(per_col):
+            cell.grid_columnconfigure(i, weight=1)
+            v = tk.StringVar()
+            e = tk.Entry(cell, textvariable=v, width=3, justify="center")
+            e.grid(row=0, column=i, padx=2, pady=2, sticky="nsew")
+            multi_text_vars[(content_row, c, i)] = v
+
 def make_radio_row(content_row: int):
     ui_row = content_row + 1
     radio_vars[content_row] = []
@@ -68,8 +86,28 @@ def make_available_letters_row(content_row: int):
 def extract():
     green = [text_vars[(0, c)].get() for c in range(COLS)]
     green_more_than_once = [radio_vars[1][c].get() for c in range(COLS)]
-    yellow = [text_vars[(2, c)].get() for c in range(COLS)]
-    yellow_more_than_once = [text_vars[(3, c)].get() for c in range(COLS)]
+    
+    # Yellow als 5x5 (Spalten x Felder):
+    yellow = []
+    yellow_more_than_once = []
+
+    for c in range(COLS):
+        y_col = []
+        y_mto_col = []
+        for i in range(5):
+            y_val = multi_text_vars[(2, c, i)].get().strip()
+            mto_val = multi_text_vars[(3, c, i)].get().strip()
+
+            # Regel: wenn oben (yellow) befüllt ist und unten leer -> unten als "0" lesen
+            if y_val != "" and mto_val == "":
+                mto_val = "0"
+
+            y_col.append(y_val)
+            y_mto_col.append(mto_val)
+
+        yellow.append(y_col)
+        yellow_more_than_once.append(y_mto_col)
+        
     available_letters = available_letters_var.get()
 
     result = {
@@ -80,7 +118,7 @@ def extract():
         "available_letters": available_letters,
     }
 
-    print("\n\n", result,"\n\n")
+    #print("\n\n", result,"\n\n")
     words = wd.extract(result)
     messagebox.showinfo("Extrahiert", str(words))
 
@@ -93,13 +131,13 @@ make_text_row(0)
 add_row_title(1)
 make_radio_row(1)
 
-# Zeile 3: Yellow (Text)
+# Zeile 3: Yellow (JETZT: 5 Textfelder pro Spalte nebeneinander)
 add_row_title(2)
-make_text_row(2)
+make_multi_text_row(2, per_col=5)
 
-# Zeile 4: More than once? (Radio)
+# Zeile 4: More than once? (JETZT: 5 Textfelder pro Spalte nebeneinander)
 add_row_title(3)
-make_text_row(3)
+make_multi_text_row(3, per_col=5)
 
 add_row_title(4)
 make_available_letters_row(4)

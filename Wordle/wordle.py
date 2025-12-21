@@ -1,11 +1,11 @@
 import consts as cn
-
+import time
 
 def filter_dupes():
    
     green_zip = zip(cn.green, cn.green_mul)
     
-    cn.letters = list(cn.letters) + cn.green + cn.yellow_list
+    cn.letters = list(cn.letters) + cn.green + ["".join(i) for i in cn.yellow_list]
     cn.letters = list("".join(set(cn.letters)))
     
     for c, i in green_zip:
@@ -54,30 +54,33 @@ def calculate():
     cn.words = []
     for i in cn.i_list:
         for j in cn.j_list:
-            if j in cn.yellow_dic and (not cn.yellow_dic[j]) and j in i:
+            if j in cn.yellow_dic and cn.yellow_dic[j] == 1 and j in i:
                 continue
 
             for k in cn.k_list:     
-                if k in cn.yellow_dic and (not cn.yellow_dic[k]) and k in i+j:
+                if k in cn.yellow_dic and cn.yellow_dic[k] == 1 and k in i+j:
                     continue
 
                 for l in cn.l_list:   
-                    if l in cn.yellow_dic and (not cn.yellow_dic[l]) and l in i+j+k:
+                    if l in cn.yellow_dic and cn.yellow_dic[l] == 1 and l in i+j+k:
                         continue
 
                     for m in cn.m_list:   
-                        if m in cn.yellow_dic and (not cn.yellow_dic[m]) and m in i+j+k+l:
+                        if m in cn.yellow_dic and cn.yellow_dic[m] == 1 and m in i+j+k+l:
                             continue   
 
                         # create word   
                         buff = i + j + k + l + m
 
                         # check if word exists
-                        if buff in cn.data and check_word(buff):
+                        if check_yellows_included(buff) and check_yellow_amount(buff) and buff in cn.data:
                             cn.words.append(buff)
 
+def adjust_list(x):
+    cn.words.remove(x)
 
-def check_word(word):
+
+def check_yellows_included(word):
    
     yel = []
     for i in cn.yellow_list:
@@ -92,32 +95,36 @@ def check_word(word):
     
     return True
 
+def check_yellow_amount(word):
+    
+    for i in cn.yellow_dic:
+        n = cn.yellow_dic[i]
+        if n == 0:
+            continue
+        elif n == 1 and (not 1 == word.count(i)):
+            return False
+        elif n == 2 and (not 1 < word.count(i)):
+            return False
+        elif n == 3 and (not 2 == word.count(i)):
+            return False
+        elif n == 4 and (not 2 < word.count(i)):
+            return False
+    return True
 
-def cn_Print():
-    print("Green:", cn.green)
-    print("Yellow-List:", cn.yellow_list)
-    print("Yellow-Dict:", cn.yellow_dic)
-    print("Letters:", cn.letters)
 
+    
 def extract(gui_data): 
     
     cn.green = gui_data["green"]
     cn.green_mul = gui_data["green_more_than_once"]
     cn.yellow_list = gui_data["yellow"]
     cn.letters = list(set(gui_data["available_letters"]))
-    yellow_zip = zip(cn.yellow_list, gui_data["yellow_more_than_once"])
+    cn.yellow_zip = zip(cn.yellow_list, gui_data["yellow_more_than_once"])
     
-    for i, j in yellow_zip:
-        n = len(i)
-        m = len(j)
-        if n != m:
-            continue
-        for k in range(n):
-            cn.yellow_dic[i[k]] = int(j[k])
-            
+    cn.create_yellow_dict()
     
     filter_dupes()
-    cn_Print()
+    cn.Print()
     create_lists()
     calculate()
     
