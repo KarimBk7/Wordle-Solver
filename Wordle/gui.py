@@ -118,21 +118,22 @@ def make_available_letters_row(content_row: int):
     for r, row_letters in enumerate(QWERTY_ROWS):
         row_frame = tk.Frame(kb)
         row_frame.grid(row=r, column=0, pady=2, sticky="nsew")
-        # gleichmäßige Verteilung in der Zeile
-        for i in range(len(row_letters)):
-            row_frame.grid_columnconfigure(i, weight=1)
+        row_frame.grid_columnconfigure(tuple(range(10)), weight=1, uniform="kbcol")
+
+       
 
         for i, ch in enumerate(row_letters):
             b = tk.Button(
                 row_frame,
                 text=ch,
-                width=2,
+                width=5,
                 bg="white",
                 activebackground="white",
                 command=lambda x=ch: toggle_letter(x)
             )
             b.grid(row=0, column=i, padx=2, pady=2, sticky="nsew")
             letter_buttons[ch] = b
+
                 
 def extract():
     green = [text_vars[(0, c)].get() for c in range(COLS)]
