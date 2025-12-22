@@ -5,7 +5,7 @@ import wordle as wd
 COLS = 5
 CONTENT_ROWS = 5  # 4 Inhaltszeilen
 # Zeilen-Titel für Inhaltszeilen 1..4
-ROW_TITLES = ["Green", "More than once?", "Yellow", "More than once?", "Grey (Not used)"]
+ROW_TITLES = ["Green", "More than once?", "Yellow", ">0  |  =1  |  >1\n=2  |  >2  |  =3", "Grey (Not used)"]
 COL_TITLES = ["1. Buchstabe", "2. Buchstabe", "3. Buchstabe", "4. Buchstabe", "5. Buchstabe"]
 
 root = tk.Tk()
@@ -15,6 +15,25 @@ multi_text_vars = {}    # (content_row, col, i) -> StringVar   i=0..4
 text_vars = {}   # (content_row, col) -> StringVar  (content_row: 0..3)
 available_letters_var = tk.StringVar()  # für Zeile 5 (ein Feld)
 radio_vars = {}  # content_row -> list[StringVar]   (nur für Radio-Zeilen)
+
+letter_selected = {}    # 'a'..'z' -> bool
+letter_buttons = {}     # 'a'..'z' -> Button
+QWERTY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
+ALL_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+def selected_letters_string() -> str:
+    # liefert die Buchstaben, die "noch verfügbar" sind (nicht angeklickt/grau)
+    return "".join(ch.lower() for ch in ALL_LETTERS if not letter_selected.get(ch, False))
+
+def toggle_letter(ch: str):
+    # ch ist Großbuchstabe
+    letter_selected[ch] = not letter_selected.get(ch, False)
+    btn = letter_buttons[ch]
+    if letter_selected[ch]:
+        btn.configure(bg="#c0c0c0", activebackground="#c0c0c0")  # grau
+    else:
+        btn.configure(bg="white", activebackground="white")      # weiß
+
 
 # Layout:
 # row 0: Spaltentitel
@@ -79,10 +98,42 @@ def make_radio_row(content_row: int):
         tk.Radiobutton(frame, text="No", variable=v, value=0).pack(anchor="w")
 
 def make_available_letters_row(content_row: int):
+    # ersetzt Entry durch Button-Keyboard
     ui_row = content_row + 1
-    e = tk.Entry(root, textvariable=available_letters_var, justify="left")
-    e.grid(row=ui_row, column=1, columnspan=COLS, padx=4, pady=4, sticky="nsew")
-    
+
+    wrap = tk.Frame(root)
+    wrap.grid(row=ui_row, column=1, columnspan=COLS, padx=4, pady=4, sticky="nsew")
+
+    # für sauberes Expand
+    wrap.grid_columnconfigure(0, weight=1)
+    wrap.grid_rowconfigure(0, weight=1)
+
+    kb = tk.Frame(wrap, bd=1, relief="solid")
+    kb.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
+
+    # Buttons initialisieren
+    for ch in ALL_LETTERS:
+        letter_selected[ch] = False
+
+    for r, row_letters in enumerate(QWERTY_ROWS):
+        row_frame = tk.Frame(kb)
+        row_frame.grid(row=r, column=0, pady=2, sticky="nsew")
+        # gleichmäßige Verteilung in der Zeile
+        for i in range(len(row_letters)):
+            row_frame.grid_columnconfigure(i, weight=1)
+
+        for i, ch in enumerate(row_letters):
+            b = tk.Button(
+                row_frame,
+                text=ch,
+                width=2,
+                bg="white",
+                activebackground="white",
+                command=lambda x=ch: toggle_letter(x)
+            )
+            b.grid(row=0, column=i, padx=2, pady=2, sticky="nsew")
+            letter_buttons[ch] = b
+                
 def extract():
     green = [text_vars[(0, c)].get() for c in range(COLS)]
     green_more_than_once = [radio_vars[1][c].get() for c in range(COLS)]
@@ -108,7 +159,7 @@ def extract():
         yellow.append(y_col)
         yellow_more_than_once.append(y_mto_col)
         
-    available_letters = available_letters_var.get()
+    available_letters = selected_letters_string()
 
     result = {
         "green": green,
