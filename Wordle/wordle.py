@@ -132,6 +132,8 @@ def extract(gui_data):
         return len(set(x))
     sorted(cn.words, key=sort, reverse=True)
     
+    
+    cn.reset()
     return cn.words
 
 

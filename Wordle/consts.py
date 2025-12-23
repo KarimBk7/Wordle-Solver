@@ -18,7 +18,26 @@ m_list = []
 
 y_list = []
 
-words = []
+
+def reset():
+    green =  ["","","","",""]
+    green_mul = [1,1,1,1,1]
+    yellow_list =[[""],[""],[""],[""],[""]]
+    yellow_dic = {}
+    yellow_zip = None
+    letters = ""
+
+
+    i_list = []
+    j_list = []
+    k_list = []
+    l_list = []
+    m_list = []
+
+    y_list = []
+
+    words = []
+
 
 
 def create_yellow_dict():
