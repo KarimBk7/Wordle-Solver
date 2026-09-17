@@ -1,5 +1,12 @@
-def load(path):
-    with open(path) as f:
+import os
+import sys
+
+# next to this file, or the temporary folder PyInstaller unpacks the .exe into
+BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+
+
+def load(name):
+    with open(os.path.join(BASE_DIR, name)) as f:
         return f.read().split()
 
 # words that can be the answer of the day, and words Wordle only accepts as a guess
