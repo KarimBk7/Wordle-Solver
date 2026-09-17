@@ -3,14 +3,22 @@
 A desktop helper for [Wordle](https://www.nytimes.com/games/wordle). You enter what the game
 told you about your guesses, and it lists every word that still fits.
 
+## ⬇️ Download for Windows
+
+### **[Download Wordle-Solver.exe](https://github.com/KarimBk7/Wordle-Solver/releases/latest/download/Wordle-Solver.exe)**
+
+Double-click the downloaded file and the window below opens. There is nothing to install and you
+do not need Python — everything is inside that one file.
+
+Windows may warn you that the file is unknown ("Windows protected your PC"). That is because the
+file is not signed, not because something is wrong with it. Click *More info* → *Run anyway*.
+
 ![The main window](docs/main-window.png)
 
-## Running it
+## Running it from source
 
-**Without Python:** download `Wordle-Solver.exe` and double-click it. Everything is bundled,
-nothing to install. Windows only.
-
-**With Python** (3.8 or newer, no dependencies — Tkinter ships with Python):
+Only needed if you want to change the code. Python 3.8 or newer, no dependencies, since Tkinter
+ships with Python:
 
 ```
 python main.py
