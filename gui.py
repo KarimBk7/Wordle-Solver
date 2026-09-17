@@ -25,7 +25,7 @@ BORDER = "#d3d6da"
 GREY = "#787c7e"
 
 root = tk.Tk()
-root.title("Wordle-Cheater")
+root.title("Wordle-Solver")
 root.configure(bg=BG, padx=10, pady=10)
 root.option_add("*Font", FONT)
 
