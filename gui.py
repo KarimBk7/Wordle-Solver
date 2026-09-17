@@ -301,4 +301,5 @@ tk.Button(root, text="Find words", command=extract, bg="#6aaa64", fg="white",
 root.update_idletasks()
 limit_size(root, root.winfo_reqwidth(), root.winfo_reqheight(), 1.25)
 
-root.mainloop()
+def run():
+    root.mainloop()
