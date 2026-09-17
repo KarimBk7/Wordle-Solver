@@ -203,8 +203,27 @@ def limit_size(win, min_w, min_h, factor):
     """Minimum size, and at most 'factor' times that - never larger than the screen."""
     max_w = min(int(min_w * factor), win.winfo_screenwidth() - 20)
     max_h = min(int(min_h * factor), win.winfo_screenheight() - 80)  # room for the taskbar
+    max_w, max_h = max(max_w, min_w), max(max_h, min_h)
     win.minsize(min_w, min_h)
-    win.maxsize(max(max_w, min_w), max(max_h, min_h))
+    win.maxsize(max_w, max_h)
+
+    # some window managers (WSLg for example) ignore the limits above, so enforce them here.
+    # only once the resizing has settled, otherwise the window flickers while dragging
+    job = None
+
+    def clamp(event):
+        nonlocal job
+        if event.widget is not win:
+            return
+        w = min(max(event.width, min_w), max_w)
+        h = min(max(event.height, min_h), max_h)
+        if (w, h) == (event.width, event.height):
+            return
+        if job:
+            win.after_cancel(job)
+        job = win.after(200, lambda: win.geometry(f"{w}x{h}"))
+
+    win.bind("<Configure>", clamp)
     return max_w, max_h
 
 
