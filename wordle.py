@@ -1,130 +1,45 @@
-import consts as cn
+with open("words_5.txt") as f:
+    WORDS = f.read().split()
 
-def filter_dupes():
-   
-    green_zip = zip(cn.green, cn.green_mul)
-    
-    cn.letters = list(cn.letters) + cn.green + ["".join(i) for i in cn.yellow_list]
-    cn.letters = list("".join(set(cn.letters)))
-    
-    for c, i in green_zip:
-        if c and not i:
-            cn.letters.remove(c)
-    cn.letters = "".join(set(cn.letters))
-        
-
-        
-
-def create_lists():
-    
-    if cn.green[0] != "":
-        cn.i_list = [cn.green[0]]
-    else:
-        cn.i_list = [i for i in cn.letters if i not in cn.yellow_list[0]]
-
-    if cn.green[1] != "":
-        cn.j_list = [cn.green[1]]
-    else:
-        cn.j_list = [i for i in cn.letters if i not in cn.yellow_list[1]]
-        
-    if cn.green[2] != "":
-        cn.k_list = [cn.green[2]]
-    else:
-        cn.k_list = [i for i in cn.letters if i not in cn.yellow_list[2]]
-        
-    if cn.green[3] != "":
-        cn.l_list = [cn.green[3]]
-    else:
-        cn.l_list = [i for i in cn.letters if i not in cn.yellow_list[3]]
-        
-    if cn.green[4] != "":
-        cn.m_list = [cn.green[4]]
-    else:
-        cn.m_list = [i for i in cn.letters if i not in cn.yellow_list[4]]
+# count code from the GUI -> check how often a yellow letter appears in the word
+COUNT_CHECKS = {
+    ">0": lambda n: n >= 1,
+    "=1": lambda n: n == 1,
+    ">1": lambda n: n >= 2,
+    "=2": lambda n: n == 2,
+    ">2": lambda n: n >= 3,
+    "=3": lambda n: n == 3,
+}
 
 
-def calculate():
-    cn.words = []
-    for i in cn.i_list:
-        for j in cn.j_list:
-            if j in cn.yellow_dic and cn.yellow_dic[j] == 1 and j in i:
-                continue
+def extract(gui_data):
+    green = gui_data["green"]
+    yellow = gui_data["yellow"]
 
-            for k in cn.k_list:     
-                if k in cn.yellow_dic and cn.yellow_dic[k] == 1 and k in i+j:
-                    continue
+    # letters allowed at positions without a green letter
+    letters = set(gui_data["available_letters"]) | set(green) | {ch for col in yellow for ch in col}
+    for ch, can_repeat in zip(green, gui_data["green_more_than_once"]):
+        if ch and not can_repeat:
+            letters.discard(ch)
 
-                for l in cn.l_list:   
-                    if l in cn.yellow_dic and cn.yellow_dic[l] == 1 and l in i+j+k:
-                        continue
+    # yellow letter -> count check (a later field for the same letter wins)
+    counts = {}
+    for col, amounts in zip(yellow, gui_data["yellow_more_than_once"]):
+        for ch, amount in zip(col, amounts):
+            if ch:
+                counts[ch] = COUNT_CHECKS[amount]
 
-                    for m in cn.m_list:   
-                        if m in cn.yellow_dic and cn.yellow_dic[m] == 1 and m in i+j+k+l:
-                            continue   
+    def matches(word):
+        for pos, ch in enumerate(word):
+            if green[pos]:
+                if ch != green[pos]:
+                    return False
+            elif ch not in letters or ch in yellow[pos]:
+                return False
+        # every yellow letter has to appear the given number of times
+        return all(check(word.count(ch)) for ch, check in counts.items())
 
-                        # create word   
-                        buff = i + j + k + l + m
-
-                        # check if word exists
-                        if check_yellows_included(buff) and check_yellow_amount(buff) and buff in cn.data:
-                            cn.words.append(buff)
-
-def adjust_list(x):
-    cn.words.remove(x)
-
-
-def check_yellows_included(word):
-   
-    yel = []
-    for i in cn.yellow_list:
-        for j in i:
-            yel.append(j)
-            
-    yel = set(yel)
-    
-    for i in yel:
-        if not i in word:
-            return False
-    
-    return True
-
-def check_yellow_amount(word):
-    
-    for i in cn.yellow_dic:
-        n = cn.yellow_dic[i]
-        if n == 0:
-            continue
-        elif n == 1 and (not 1 == word.count(i)):
-            return False
-        elif n == 2 and (not 1 < word.count(i)):
-            return False
-        elif n == 3 and (not 2 == word.count(i)):
-            return False
-        elif n == 4 and (not 2 < word.count(i)):
-            return False
-    return True
-
-
-    
-def extract(gui_data): 
-    
-    cn.green = gui_data["green"]
-    cn.green_mul = gui_data["green_more_than_once"]
-    cn.yellow_list = gui_data["yellow"]
-    cn.letters = list(set(gui_data["available_letters"]))
-    cn.yellow_zip = zip(cn.yellow_list, gui_data["yellow_more_than_once"])
-    
-    cn.create_yellow_dict()
-    
-    filter_dupes()
-    cn.Print()
-    create_lists()
-    calculate()
-    
-    def sort(x):
-        return len(set(x))
-    sorted(cn.words, key=sort, reverse=True)
-    
-    
-    cn.reset()
-    return cn.words
+    words = [w for w in WORDS if matches(w)]
+    # most distinct letters first, they reveal the most information
+    words.sort(key=lambda w: len(set(w)), reverse=True)
+    return words

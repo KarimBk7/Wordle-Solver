@@ -14,7 +14,7 @@ ROW_TITLES = [
 ]
 # Wordle colors per row title: (background, foreground)
 ROW_COLORS = [("#6aaa64", "white"), ("#6aaa64", "white"), ("#c9b458", "white"), ("#c9b458", "white"), ("#787c7e", "white")]
-# Combobox label -> code expected by consts.create_yellow_dict
+# Combobox label -> code expected by wordle.COUNT_CHECKS
 AMOUNT_OPTIONS = {"1+": ">0", "1": "=1", "2+": ">1", "2": "=2", "3+": ">2", "3": "=3"}
 COL_TITLES = ["1st letter", "2nd letter", "3rd letter", "4th letter", "5th letter"]
 MAX_SHOWN_WORDS = 200
