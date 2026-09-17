@@ -5,23 +5,42 @@ import wordle as wd
 COLS = 5
 CONTENT_ROWS = 5  # content rows
 # Row titles for the content rows
-ROW_TITLES = ["Green", "More than once?", "Yellow", "How often in the word?\n1 = exactly 1x  |  1+ = at least 1x", "Grey (Not used)"]
+ROW_TITLES = [
+    "Green\n(correct position)",
+    "Can it appear again\nat another position?",
+    "Yellow\n(wrong position)",
+    "How often in the word?\n1 = exactly 1x  |  1+ = at least 1x",
+    "Grey (not in word)\nclick to exclude",
+]
+# Wordle colors per row title: (background, foreground)
+ROW_COLORS = [("#6aaa64", "white"), ("#6aaa64", "white"), ("#c9b458", "white"), ("#c9b458", "white"), ("#787c7e", "white")]
 # Combobox label -> code expected by consts.create_yellow_dict
 AMOUNT_OPTIONS = {"1+": ">0", "1": "=1", "2+": ">1", "2": "=2", "3+": ">2", "3": "=3"}
 COL_TITLES = ["1st letter", "2nd letter", "3rd letter", "4th letter", "5th letter"]
+MAX_SHOWN_WORDS = 200
+
+FONT = ("Segoe UI", 10)
+LETTER_FONT = ("Segoe UI", 12, "bold")
+BG = "#f5f5f5"
+BORDER = "#d3d6da"
+GREY = "#787c7e"
 
 root = tk.Tk()
 root.title("Wordle-Cheater")
+root.configure(bg=BG, padx=10, pady=10)
+root.option_add("*Font", FONT)
 
 multi_text_vars = {}    # (content_row, col, i) -> StringVar   i=0..4
 text_vars = {}   # (content_row, col) -> StringVar  (content_row: 0..3)
-available_letters_var = tk.StringVar()  # for row 5 (single field)
 radio_vars = {}  # content_row -> list[StringVar]   (radio rows only)
 
 letter_selected = {}    # 'a'..'z' -> bool
 letter_buttons = {}     # 'a'..'z' -> Button
 QWERTY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"]
 ALL_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+# only allow a single letter per entry
+single_letter = (root.register(lambda p: p == "" or (len(p) == 1 and p.isalpha())), "%P")
 
 def selected_letters_string() -> str:
     # returns the letters that are still available (not clicked/grey)
@@ -32,9 +51,19 @@ def toggle_letter(ch: str):
     letter_selected[ch] = not letter_selected.get(ch, False)
     btn = letter_buttons[ch]
     if letter_selected[ch]:
-        btn.configure(bg="#c0c0c0", activebackground="#c0c0c0")  # grey
+        btn.configure(bg=GREY, fg="white", activebackground=GREY, activeforeground="white")
     else:
-        btn.configure(bg="white", activebackground="white")      # white
+        btn.configure(bg=BORDER, fg="black", activebackground=BORDER, activeforeground="black")
+
+def cell_frame(ui_row: int, col: int) -> tk.Frame:
+    cell = tk.Frame(root, bg="white", highlightthickness=1, highlightbackground=BORDER)
+    cell.grid(row=ui_row, column=col, padx=3, pady=3, sticky="nsew")
+    return cell
+
+def letter_entry(parent, var: tk.StringVar, width: int) -> tk.Entry:
+    return tk.Entry(parent, textvariable=var, width=width, justify="center", font=LETTER_FONT,
+                    relief="flat", highlightthickness=1, highlightbackground=BORDER,
+                    validate="key", validatecommand=single_letter)
 
 
 # Layout:
@@ -45,28 +74,25 @@ def toggle_letter(ch: str):
 # cols 1..5: cells
 for r in range(CONTENT_ROWS + 2):  # + header row + button row
     root.grid_rowconfigure(r, weight=1)
-for c in range(COLS + 1):  # + row title column
-    root.grid_columnconfigure(c, weight=1)
+for c in range(1, COLS + 1):  # row title column keeps its size
+    root.grid_columnconfigure(c, weight=1, uniform="cols")
 
 # Header row: top left empty, then column titles
-tk.Label(root, text="", padx=6, pady=6).grid(row=0, column=0, padx=4, pady=(4, 2), sticky="nsew")
 for c, title in enumerate(COL_TITLES, start=1):
-    tk.Label(root, text=title, bd=1, relief="solid", padx=6, pady=6).grid(
-        row=0, column=c, padx=4, pady=(4, 2), sticky="nsew"
-    )
+    tk.Label(root, text=title, bg=BG, font=(FONT[0], FONT[1], "bold")).grid(row=0, column=c, pady=(0, 2))
 
 def add_row_title(content_row: int):
     ui_row = content_row + 1
-    tk.Label(root, text=ROW_TITLES[content_row], bd=1, relief="solid", padx=6, pady=6).grid(
-        row=ui_row, column=0, padx=4, pady=4, sticky="nsew"
+    bg, fg = ROW_COLORS[content_row]
+    tk.Label(root, text=ROW_TITLES[content_row], bg=bg, fg=fg, padx=8, pady=6).grid(
+        row=ui_row, column=0, padx=3, pady=3, sticky="nsew"
     )
 
 def make_text_row(content_row: int):
     ui_row = content_row + 1
     for c in range(COLS):
         v = tk.StringVar()
-        e = tk.Entry(root, textvariable=v, width=12, justify="center")
-        e.grid(row=ui_row, column=c + 1, padx=4, pady=4, sticky="nsew")
+        letter_entry(root, v, width=3).grid(row=ui_row, column=c + 1, padx=3, pady=3, sticky="nsew")
         text_vars[(content_row, c)] = v
 
 def make_multi_text_row(content_row: int, per_col: int = 5, options=None):
@@ -76,18 +102,17 @@ def make_multi_text_row(content_row: int, per_col: int = 5, options=None):
     """
     ui_row = content_row + 1
     for c in range(COLS):
-        cell = tk.Frame(root, bd=1, relief="solid")
-        cell.grid(row=ui_row, column=c + 1, padx=4, pady=4, sticky="nsew")
+        cell = cell_frame(ui_row, c + 1)
 
         for i in range(per_col):
-            cell.grid_columnconfigure(i, weight=1)
+            cell.grid_columnconfigure(i, weight=1, uniform="fields")
             if options:
                 v = tk.StringVar(value=options[0])
                 e = ttk.Combobox(cell, textvariable=v, values=options, width=3, state="readonly", justify="center")
             else:
                 v = tk.StringVar()
-                e = tk.Entry(cell, textvariable=v, width=3, justify="center")
-            e.grid(row=0, column=i, padx=2, pady=2, sticky="nsew")
+                e = letter_entry(cell, v, width=2)
+            e.grid(row=0, column=i, padx=2, pady=4, sticky="nsew")
             multi_text_vars[(content_row, c, i)] = v
 
 def make_radio_row(content_row: int):
@@ -97,54 +122,54 @@ def make_radio_row(content_row: int):
         v = tk.IntVar(value=1)  # Default
         radio_vars[content_row].append(v)
 
-        frame = tk.Frame(root, bd=1, relief="solid")
-        frame.grid(row=ui_row, column=c + 1, padx=4, pady=4, sticky="nsew")
-
-        tk.Radiobutton(frame, text="Yes", variable=v, value=1).pack(anchor="w")
-        tk.Radiobutton(frame, text="No", variable=v, value=0).pack(anchor="w")
+        cell = cell_frame(ui_row, c + 1)
+        inner = tk.Frame(cell, bg="white")
+        inner.place(relx=0.5, rely=0.5, anchor="center")
+        tk.Radiobutton(inner, text="Yes", variable=v, value=1, bg="white").pack(side="left")
+        tk.Radiobutton(inner, text="No", variable=v, value=0, bg="white").pack(side="left")
 
 def make_available_letters_row(content_row: int):
     # button keyboard instead of an entry
     ui_row = content_row + 1
 
-    wrap = tk.Frame(root)
-    wrap.grid(row=ui_row, column=1, columnspan=COLS, padx=4, pady=4, sticky="nsew")
+    cell = tk.Frame(root, bg="white", highlightthickness=1, highlightbackground=BORDER)
+    cell.grid(row=ui_row, column=1, columnspan=COLS, padx=3, pady=3, sticky="nsew")
 
-    # expand cleanly
-    wrap.grid_columnconfigure(0, weight=1)
-    wrap.grid_rowconfigure(0, weight=1)
-
-    kb = tk.Frame(wrap, bd=1, relief="solid")
-    kb.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
+    # centered keyboard
+    kb = tk.Frame(cell, bg="white")
+    kb.place(relx=0.5, rely=0.5, anchor="center")
 
     # initialise buttons
     for ch in ALL_LETTERS:
         letter_selected[ch] = False
 
     for r, row_letters in enumerate(QWERTY_ROWS):
-        row_frame = tk.Frame(kb)
-        row_frame.grid(row=r, column=0, pady=2, sticky="nsew")
-        row_frame.grid_columnconfigure(tuple(range(10)), weight=1, uniform="kbcol")
-
-       
+        row_frame = tk.Frame(kb, bg="white")
+        row_frame.grid(row=r, column=0, pady=2)
 
         for i, ch in enumerate(row_letters):
             b = tk.Button(
                 row_frame,
                 text=ch,
-                width=5,
-                bg="white",
-                activebackground="white",
+                width=4,
+                font=(FONT[0], FONT[1], "bold"),
+                relief="flat",
+                bg=BORDER,
+                activebackground=BORDER,
+                cursor="hand2",
                 command=lambda x=ch: toggle_letter(x)
             )
-            b.grid(row=0, column=i, padx=2, pady=2, sticky="nsew")
+            b.grid(row=0, column=i, padx=2)
             letter_buttons[ch] = b
 
-                
+    # the keyboard is placed, so reserve its height in the grid row
+    kb.update_idletasks()
+    cell.configure(height=kb.winfo_reqheight() + 12)
+
 def extract():
-    green = [text_vars[(0, c)].get() for c in range(COLS)]
+    green = [text_vars[(0, c)].get().strip().lower() for c in range(COLS)]
     green_more_than_once = [radio_vars[1][c].get() for c in range(COLS)]
-    
+
     # Yellow as 5x5 (columns x fields):
     yellow = []
     yellow_more_than_once = []
@@ -153,7 +178,7 @@ def extract():
         y_col = []
         y_mto_col = []
         for i in range(5):
-            y_val = multi_text_vars[(2, c, i)].get().strip()
+            y_val = multi_text_vars[(2, c, i)].get().strip().lower()
             mto_val = AMOUNT_OPTIONS[multi_text_vars[(3, c, i)].get()]
 
             y_col.append(y_val)
@@ -161,7 +186,7 @@ def extract():
 
         yellow.append(y_col)
         yellow_more_than_once.append(y_mto_col)
-        
+
     available_letters = selected_letters_string()
 
     result = {
@@ -173,14 +198,20 @@ def extract():
     }
 
     words = wd.extract(result)
-    messagebox.showinfo("Extracted", str(words))
+    if not words:
+        messagebox.showinfo("Result", "No matching words found.")
+        return
+    text = ", ".join(words[:MAX_SHOWN_WORDS])
+    if len(words) > MAX_SHOWN_WORDS:
+        text += f"\n\n... and {len(words) - MAX_SHOWN_WORDS} more"
+    messagebox.showinfo("Result", f"{len(words)} possible words:\n\n{text}")
 
 
 # Row 1: Green (text)
 add_row_title(0)
 make_text_row(0)
 
-# Row 2: More than once? (radio)
+# Row 2: Can the green letter appear again? (radio)
 add_row_title(1)
 make_radio_row(1)
 
@@ -196,9 +227,16 @@ add_row_title(4)
 make_available_letters_row(4)
 
 # Button at the bottom
-tk.Button(root, text="Extract", command=extract).grid(
-    row=CONTENT_ROWS + 1, column=0, columnspan=COLS + 1, padx=6, pady=(8, 6), sticky="nsew"
+tk.Button(root, text="Find words", command=extract, bg="#6aaa64", fg="white",
+          activebackground="#538d4e", activeforeground="white", relief="flat",
+          font=(FONT[0], 11, "bold"), cursor="hand2", pady=6).grid(
+    row=CONTENT_ROWS + 1, column=0, columnspan=COLS + 1, padx=3, pady=(10, 0), sticky="nsew"
 )
 
+# natural size is the minimum, allow growing up to 1.5x
+root.update_idletasks()
+min_w, min_h = root.winfo_reqwidth(), root.winfo_reqheight()
+root.minsize(min_w, min_h)
+root.maxsize(int(min_w * 1.5), int(min_h * 1.5))
 
 root.mainloop()
