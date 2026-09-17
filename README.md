@@ -3,7 +3,7 @@
 A desktop helper for [Wordle](https://www.nytimes.com/games/wordle). You enter what the game
 told you about your guesses, and it lists every word that still fits.
 
-![The main window](screenshot.png)
+![The main window](docs/main-window.png)
 
 ## Running it
 
@@ -39,7 +39,7 @@ Then click **Find words**. The result window shows two lists:
 Within each list, words with the most distinct letters come first, since those rule out the most
 on your next guess.
 
-![The result window](screenshot-results.png)
+![The result window](docs/results.png)
 
 ### The "how often" row
 
