@@ -1,5 +1,10 @@
-with open("words_5.txt") as f:
-    WORDS = f.read().split()
+def load(path):
+    with open(path) as f:
+        return f.read().split()
+
+# words that can be the answer of the day, and words Wordle only accepts as a guess
+ANSWERS = load("words_answers.txt")
+GUESSES = load("words_guesses.txt")
 
 # count code from the GUI -> check how often a yellow letter appears in the word
 COUNT_CHECKS = {
@@ -39,7 +44,8 @@ def extract(gui_data):
         # every yellow letter has to appear the given number of times
         return all(check(word.count(ch)) for ch, check in counts.items())
 
-    words = [w for w in WORDS if matches(w)]
-    # most distinct letters first, they reveal the most information
-    words.sort(key=lambda w: len(set(w)), reverse=True)
-    return words
+    def hits(words):
+        # most distinct letters first, they reveal the most information
+        return sorted((w for w in words if matches(w)), key=lambda w: len(set(w)), reverse=True)
+
+    return hits(ANSWERS), hits(GUESSES)

@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk
 import wordle as wd
 
 COLS = 5
@@ -17,7 +17,6 @@ ROW_COLORS = [("#6aaa64", "white"), ("#6aaa64", "white"), ("#c9b458", "white"), 
 # Combobox label -> code expected by wordle.COUNT_CHECKS
 AMOUNT_OPTIONS = {"1+": ">0", "1": "=1", "2+": ">1", "2": "=2", "3+": ">2", "3": "=3"}
 COL_TITLES = ["1st letter", "2nd letter", "3rd letter", "4th letter", "5th letter"]
-MAX_SHOWN_WORDS = 200
 
 FONT = ("Segoe UI", 10)
 LETTER_FONT = ("Segoe UI", 12, "bold")
@@ -197,14 +196,60 @@ def extract():
         "available_letters": available_letters,
     }
 
-    words = wd.extract(result)
-    if not words:
-        messagebox.showinfo("Result", "No matching words found.")
-        return
-    text = ", ".join(words[:MAX_SHOWN_WORDS])
-    if len(words) > MAX_SHOWN_WORDS:
-        text += f"\n\n... and {len(words) - MAX_SHOWN_WORDS} more"
-    messagebox.showinfo("Result", f"{len(words)} possible words:\n\n{text}")
+    show_results(*wd.extract(result))
+
+
+def limit_size(win, min_w, min_h, factor):
+    """Minimum size, and at most 'factor' times that - never larger than the screen."""
+    max_w = min(int(min_w * factor), win.winfo_screenwidth() - 20)
+    max_h = min(int(min_h * factor), win.winfo_screenheight() - 80)  # room for the taskbar
+    win.minsize(min_w, min_h)
+    win.maxsize(max(max_w, min_w), max(max_h, min_h))
+    return max_w, max_h
+
+
+def word_list(parent, title, words, color):
+    """One column of the result window: heading, count and the words."""
+    frame = tk.Frame(parent, bg=BG)
+    tk.Label(frame, text=f"{title}  ({len(words)})", bg=color, fg="white",
+             font=(FONT[0], 11, "bold"), pady=6).pack(fill="x")
+
+    box = tk.Frame(frame, bg="white", highlightthickness=1, highlightbackground=BORDER)
+    box.pack(fill="both", expand=True)
+    bar = tk.Scrollbar(box)
+    bar.pack(side="right", fill="y")
+    # width/height 1: the size comes from the window, not from the text
+    text = tk.Text(box, width=1, height=1, wrap="word", relief="flat", padx=10, pady=10,
+                   bg="white", font=("Consolas", 11), yscrollcommand=bar.set)
+    text.pack(side="left", fill="both", expand=True)
+    bar.configure(command=text.yview)
+
+    text.insert("1.0", "   ".join(words) if words else "none")
+    text.configure(state="disabled")  # read only, but still selectable for copying
+    return frame
+
+
+def show_results(answers, guesses):
+    win = tk.Toplevel(root, bg=BG, padx=10, pady=10)
+    win.title("Results")
+    win.transient(root)
+    win.bind("<Escape>", lambda e: win.destroy())
+
+    # the button first, so it keeps its space at the bottom
+    tk.Button(win, text="Close", command=win.destroy, relief="flat", bg=BORDER,
+              activebackground=BORDER, cursor="hand2", pady=4).pack(side="bottom", fill="x", pady=(10, 0))
+
+    if not answers and not guesses:
+        tk.Label(win, text="No matching words found.", bg=BG, pady=20).pack()
+    else:
+        panes = tk.Frame(win, bg=BG)
+        panes.pack(fill="both", expand=True)
+        word_list(panes, "Possible solutions", answers, "#6aaa64").pack(side="left", fill="both", expand=True, padx=(0, 5))
+        word_list(panes, "Other allowed guesses", guesses, GREY).pack(side="left", fill="both", expand=True, padx=(5, 0))
+
+    # word lists may be long, so this window may grow more than the main window
+    max_w, max_h = limit_size(win, 600, 320, 2.2)
+    win.geometry(f"{min(900, max_w)}x{min(560, max_h)}+{root.winfo_rootx() + 40}+{root.winfo_rooty() + 40}")
 
 
 # Row 1: Green (text)
@@ -233,10 +278,8 @@ tk.Button(root, text="Find words", command=extract, bg="#6aaa64", fg="white",
     row=CONTENT_ROWS + 1, column=0, columnspan=COLS + 1, padx=3, pady=(10, 0), sticky="nsew"
 )
 
-# natural size is the minimum, allow growing up to 1.5x
+# the natural size is the minimum: smaller than this and elements get cut off
 root.update_idletasks()
-min_w, min_h = root.winfo_reqwidth(), root.winfo_reqheight()
-root.minsize(min_w, min_h)
-root.maxsize(int(min_w * 1.5), int(min_h * 1.5))
+limit_size(root, root.winfo_reqwidth(), root.winfo_reqheight(), 1.25)
 
 root.mainloop()
