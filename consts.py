@@ -58,7 +58,7 @@ def create_yellow_dict():
                 elif m == "=2":
                     s = 3           # 3: exactly twice
                 elif m == ">2":
-                    s = 4           # 4: more than zwice
+                    s = 4           # 4: more than twice
                 elif m == "=3":
                     s = 4
                 

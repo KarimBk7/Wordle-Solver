@@ -1,5 +1,4 @@
 import consts as cn
-import time
 
 def filter_dupes():
    
@@ -9,18 +8,12 @@ def filter_dupes():
     cn.letters = list("".join(set(cn.letters)))
     
     for c, i in green_zip:
-        if not i:
+        if c and not i:
             cn.letters.remove(c)
     cn.letters = "".join(set(cn.letters))
         
 
         
-'''
-cn.green = ["","","i","t","e"]
-cn.yellow_list =[["h"],["e"],["e"],[""],["t"]]
-cn.yellow_dic = {"h": 0, "e": 0, "t":0}
-cn.letters = "qwertyihjzxcvbm"
-'''
 
 def create_lists():
     
@@ -135,30 +128,3 @@ def extract(gui_data):
     
     cn.reset()
     return cn.words
-
-
-'''
-print(f"\n\n\nAll possible Words:\n\n{words}")
-
-
-end_time = time.process_time()
-print(f"\n\n\nLaufzeit: {round(end_time - start_time, 2)} Sekunden\n")
-
-             
-    
-    
-    
-    
-    
-    
-    
-    
-exit(0)  
-# Writer    
-#time.sleep(2)        
-for i in words:
-    pyautogui.write(i)
-    
-    pyautogui.press("enter")
-    
-    pyautogui.press("backspace", presses=6)'''
