@@ -5,13 +5,17 @@ told you about your guesses, and it lists every word that still fits.
 
 ## ⬇️ Download for Windows
 
-### **[Download Wordle-Solver.exe](https://github.com/KarimBk7/Wordle-Solver/releases/latest/download/Wordle-Solver.exe)**
+### **[Download Wordle-Solver-windows.zip](https://github.com/KarimBk7/Wordle-Solver/releases/latest/download/Wordle-Solver-windows.zip)**
 
-Double-click the downloaded file and the window below opens. There is nothing to install and you
-do not need Python — everything is inside that one file.
+1. Unpack the ZIP (right-click → *Extract All*)
+2. Open the `Wordle-Solver` folder and double-click **`Wordle-Solver.exe`**
 
-Windows may warn you that the file is unknown ("Windows protected your PC"). That is because the
-file is not signed, not because something is wrong with it. Click *More info* → *Run anyway*.
+There is nothing to install and you do not need Python. Keep the files in the folder together —
+the `.exe` needs the `_internal` folder next to it.
+
+Windows may warn you that the app is unknown ("Windows protected your PC"). That is because the
+program is not signed with a paid certificate, not because something is wrong with it. Click
+*More info* → *Run anyway*.
 
 ![The main window](docs/main-window.png)
 
@@ -70,12 +74,17 @@ and [tabatkins/wordle-list](https://github.com/tabatkins/wordle-list).
 
 ```
 py -m pip install pyinstaller
-py -m PyInstaller --onefile --windowed --name Wordle-Solver ^
+py -m PyInstaller --onedir --windowed --name Wordle-Solver ^
   --add-data "words_answers.txt;." --add-data "words_guesses.txt;." main.py
 ```
 
-The result lands in `dist/`. On Linux or macOS, run the same command there and use `:` instead
-of `;` in `--add-data`.
+The result lands in `dist/Wordle-Solver/`, which is what gets zipped for the release.
+
+`--onedir` is deliberate. With `--onefile` the .exe unpacks itself at startup, which virus
+scanners and Chrome treat as suspicious, so the download gets flagged. A folder plus a ZIP avoids
+that. Signing the program with a paid certificate would be the real fix.
+
+On Linux or macOS, run the same command there and use `:` instead of `;` in `--add-data`.
 
 ## Files
 
